@@ -43,7 +43,7 @@
                 </el-select>
             </div>
             <div class="field-group">
-                <el-button type="primary">计算</el-button>
+                <el-button type="primary" @click="calculateClick">计算</el-button>
                 <el-button type="primary">全清</el-button>
             </div>
         </div>
@@ -75,7 +75,7 @@
         <td
           class="time-group morning"
           :rowspan="scheduleData.Morning"
-          v-if="i == 0"
+          v-if="i == 0&&scheduleData.Morning>=1"
         >
           <img src="@/assets/images/morning.png" />
           <span>上午</span>
@@ -83,7 +83,7 @@
         <td
           class="time-group afternoon"
           :rowspan="scheduleData.Afternoon"
-          v-if="i == scheduleData.Morning"
+          v-if="i == scheduleData.Morning&&scheduleData.Afternoon>=1"
         >
           <img src="@/assets/images/afternoon.png" />
           <span>下午</span>
@@ -91,7 +91,7 @@
         <td
           class="time-group night"
           :rowspan="scheduleData.Night"
-          v-if="i == scheduleData.Morning + scheduleData.Afternoon"
+          v-if="i == scheduleData.Morning + scheduleData.Afternoon &&scheduleData.Night>=0"
         >
           <img src="@/assets/images/night.png" />
           <span>晚上</span>
@@ -125,7 +125,7 @@ export default Vue.extend({
     return {
       scheduleData: undefined,
       startTime:"9:00",
-      endTime:"18:00",
+      endTime:"19:00",
       duration:30,
       ctrlHold:false,
       downHold:false,
@@ -172,6 +172,9 @@ export default Vue.extend({
       },
       refreshState(){
         this.$forceUpdate();
+      },
+      calculateClick(){
+
       }
   },
   computed: {},
@@ -218,7 +221,7 @@ interface IItem {
 
 class ScheduleVM implements ISchedule {
   startTime: number = 9.0;
-  endTime: number = 18.0;
+  endTime: number = 19.0;
   duration: number = 0.5;
   data: { [time: string]: IItem[] } = {};
   week: number = 0;
@@ -307,8 +310,7 @@ class ScheduleVM implements ISchedule {
     return +((this.afternoonTime - this.morningTime) / this.duration).toFixed(0);
   }
   get Night(): number {
-    const n=+((this.endTime - this.afternoonTime) / this.duration).toFixed(0);
-    return n==0?1:n;
+    return +((this.endTime - this.afternoonTime) / this.duration).toFixed(0);
   }
   get dataKeys(): string[] {
     return Object.keys(this.data);
@@ -318,6 +320,27 @@ class ScheduleVM implements ISchedule {
     const d: number = (v / 60).toFixed(3) as any;
     this.duration = d;
     this.updateData();
+  }
+
+  set StartTime(v:string){
+    if(!v){
+      return;
+    }
+    
+    this.startTime=this.getInnerTime(v);
+    this.updateData();
+  }
+
+  set EndTime(v:string){
+    this.endTime=this.getInnerTime(v);
+    this.updateData();
+  }
+
+  private getInnerTime(v:string){
+    const tr=v.split(':');
+    const h:number=+tr[0];
+    const m:number=+((+tr[1])/60).toFixed(2);
+    return h+m;
   }
 
   get ItemCount():number{
@@ -360,7 +383,7 @@ class ScheduleVM implements ISchedule {
     const t:number=this.startTime + this.duration * index;
     let selected: boolean = false;
     this.scheduledData[this.header[day].subTitle!]?.forEach((_, i) => {
-      if (t >= _.start && t <= _.end) {
+      if (t >= _.start && t+this.duration <= _.end) {
         selected = true;
         return;
       }
