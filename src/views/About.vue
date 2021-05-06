@@ -15,6 +15,8 @@ import bootstrapPlugin from "@fullcalendar/bootstrap";
 import listPlugin from "@fullcalendar/list";
 import momentPlugin from '@fullcalendar/moment';
 import momentTimezonePlugin from '@fullcalendar/moment-timezone'
+import zhLocale from "@fullcalendar/core/locales/zh-cn";
+
 export default Vue.extend({
   components:{
     FullCalendar
@@ -32,6 +34,7 @@ export default Vue.extend({
           }
       ],
       calendarOptions:{//https://fullcalendar.io/docs
+      locale:zhLocale,
         headerToolbar:{//https://fullcalendar.io/docs/headerToolbar
           start:'',
           center:'',
@@ -67,11 +70,11 @@ export default Vue.extend({
             editable:true
           }
       ],
-      titleFormat:{
-        hour12:true,
-        hour:'2-digit',
-        minute:'2-digit',
-      }, //https://fullcalendar.io/docs/date-formatting
+      // titleFormat:{
+      //   hour12:true,
+      //   hour:'2-digit',
+      //   minute:'2-digit',
+      // }, //https://fullcalendar.io/docs/date-formatting
       dayHeaderFormat:{
         month:'2-digit',
         weekday:"long",

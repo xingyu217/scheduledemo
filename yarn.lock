@@ -880,7 +880,7 @@
   dependencies:
     tslib "^2.0.3"
 
-"@fullcalendar/core@~5.6.0":
+"@fullcalendar/core@^5.6.0", "@fullcalendar/core@~5.6.0":
   version "5.6.0"
   resolved "https://registry.npm.taobao.org/@fullcalendar/core/download/@fullcalendar/core-5.6.0.tgz?cache=0&sync_timestamp=1616993746034&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2F%40fullcalendar%2Fcore%2Fdownload%2F%40fullcalendar%2Fcore-5.6.0.tgz#c0ea59235047828c9d0409432966bebc71df0bec"
   integrity sha1-wOpZI1BHgoydBAlDKWa+vHHfC+w=
