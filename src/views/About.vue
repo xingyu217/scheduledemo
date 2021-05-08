@@ -55,16 +55,24 @@ export default Vue.extend({
         events: [
         {
             id:1,
-            start: '2021-05-05T10:00:00',
-            end: '2021-05-06T16:00:00',
+            start: '2021-05-04T10:00:00',
+            end: '2021-05-04T16:00:00',
             display: 'auto',
             className:['bg-success'],
             editable:true
           },
           {
             id:2,
-            start: '2021-05-04T10:00:00',
-            end: '2021-05-04T16:00:00',
+            start: '2021-05-05T10:00:00',
+            end: '2021-05-05T15:00:00',
+            display: 'auto',
+            className:['bg-success'],
+            editable:true
+          },
+           {
+            id:3,
+            start: '2021-05-06T10:00:00',
+            end: '2021-05-06T15:00:00',
             display: 'auto',
             className:['bg-success'],
             editable:true
@@ -101,6 +109,10 @@ export default Vue.extend({
       },
       selectedEle:undefined,
       eventIndex:1,
+      startHour:9,
+      startMinute:0,
+      endHour:18,
+      endMinute:0
     }
   },
   created(){
@@ -120,14 +132,27 @@ export default Vue.extend({
       //     end: e.end,
       //     className: 'bg-warning text-white',
       // });
-      this.calendarOptions.events.push({
-        id:this.eventIndex++,
-            start: e.start,
-           end: e.end,
-            display: 'auto',
-            className:['bg-success'],
-            editable:true
+      const dayDiff=e.end.getDate()-e.start.getDate();
+      let events=this.calendarOptions.events;
+      
+        for(let i=0;i<dayDiff+1;i++){
+        events=combineArray(events,{
+          start:i==0?e.start:new Date(new Date((new Date(e.start.getTime())).setHours(0,0)).setDate(e.start.getDate()+i)),
+          end:i==dayDiff?e.end:new Date(new Date((new Date(e.start.getTime())).setHours(23,59)).setDate(e.start.getDate()+i))
           });
+      }
+      
+      this.calendarOptions.events= events.sort(compare);
+      // this.calendarOptions.events.push({
+      //   id:this.eventIndex++,
+      //       start: e.start,
+      //      end: e.end,
+      //       display: 'auto',
+      //       className:['bg-success'],
+      //       editable:true
+      //     });
+
+      this.$forceUpdate();
     },
     t(){
       
@@ -167,6 +192,72 @@ interface IPageData {
   calendarEvents:any[],
   selectedEle:any;
   eventIndex:number;
+  startHour:number;
+  startMinute:number;
+  endHour:number;
+  endMinute:number;
+}
+function compare(a,b){
+  const ad=new Date(a.start);
+  const ed=new Date(b.start);
+  if(ad>ed){
+    return 1;
+  }
+  if(ed>ad){
+    return -1;
+  }
+  return 0;
+}
+function combineArray(s:any[],data,startHour:number=9,startMinute:number=0,endHour:number=18,endMinute:number=0){
+  let match:boolean=false;
+
+  const sd=new Date(data.start);
+  const sdTimes=sd.getTime();
+  const ed=new Date(data.end);
+  const edTimes=ed.getTime();
+  const startDate=new Date(new Date(sdTimes).setHours(startHour,startMinute,0,0));
+  const endDate=new Date(new Date(edTimes).setHours(endHour,endMinute,0,0));
+  let newData=[...s];
+  let removeIndex:number[]=[];
+  for(let j=0;j<s.length;j++){
+    const esd=new Date(s[j].start);
+    const eed=new Date(s[j].end);
+    if(sd.getDate()==esd.getDate()&&!(ed<esd||sd>eed)){
+       
+        match=true;
+      }else if(match){
+        match=false;
+        removeIndex.push(j-1);
+        newData.push({
+          start:new Date(new Date(sdTimes).setHours(Math.max(startHour,Math.min(new Date(s[j-1].start).getHours(),sd.getHours())),new Date(s[j-1].start).getHours()>sd.getHours()?new Date(s[j-1].start).getMinutes():sd.getHours()<=startHour?startMinute:sd.getMinutes())),
+          end:new Date(new Date(edTimes).setHours(Math.min(endHour,Math.max(new Date(s[j-1].end).getHours(),ed.getHours())),new Date(s[j-1].end).getHours()>ed.getHours()?new Date(s[j-1].end).getMinutes():ed.getHours()>=endHour?endMinute:ed.getMinutes())),
+        })
+      break;
+      }
+    if(j==s.length-1){
+      if(match){
+        match=false;
+        const k=removeIndex.length>0?j-1:j;
+        removeIndex.push(k);
+        newData.push({
+          start:new Date(new Date(sdTimes).setHours(Math.max(startHour,Math.min(new Date(s[k].start).getHours(),sd.getHours())),new Date(s[k].start).getHours()>sd.getHours()?new Date(s[k].start).getMinutes():sd.getHours()<=startHour?startMinute:sd.getMinutes())),
+          end:new Date(new Date(edTimes).setHours(Math.min(endHour,Math.max(new Date(s[k].end).getHours(),ed.getHours())),new Date(s[k].end).getHours()>ed.getHours()?new Date(s[k].end).getMinutes():ed.getHours()>=endHour?endMinute:ed.getMinutes())),
+        })
+      }
+       else{
+         if(!(sd>endDate||ed<startDate)){
+           newData.push({
+           start:sd>startDate?sd:startDate,
+           end:ed<endDate?ed:endDate,
+         });
+         }
+       } 
+      }
+  }
+  removeIndex.forEach(r=>{
+    newData.splice(r,1);
+  });
+  return newData;
 }
 </script>
 <style lang="scss">
