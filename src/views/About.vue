@@ -56,15 +56,15 @@ export default Vue.extend({
         {
             id:1,
             start: '2021-05-04T10:00:00',
-            end: '2021-05-04T16:00:00',
+            end: '2021-05-04T13:00:00',
             display: 'auto',
             className:['bg-success'],
             editable:true
           },
           {
             id:2,
-            start: '2021-05-05T10:00:00',
-            end: '2021-05-05T15:00:00',
+            start: '2021-05-04T14:00:00',
+            end: '2021-05-04T15:00:00',
             display: 'auto',
             className:['bg-success'],
             editable:true
@@ -223,22 +223,22 @@ function combineArray(s:any[],data,startHour:number=9,startMinute:number=0,endHo
     const esd=new Date(s[j].start);
     const eed=new Date(s[j].end);
     if(sd.getDate()==esd.getDate()&&!(ed<esd||sd>eed)){
-       
+       removeIndex.push(j);
         match=true;
       }else if(match){
         match=false;
-        removeIndex.push(j-1);
+        const k=removeIndex[removeIndex.length-1];
         newData.push({
-          start:new Date(new Date(sdTimes).setHours(Math.max(startHour,Math.min(new Date(s[j-1].start).getHours(),sd.getHours())),new Date(s[j-1].start).getHours()>sd.getHours()?new Date(s[j-1].start).getMinutes():sd.getHours()<=startHour?startMinute:sd.getMinutes())),
-          end:new Date(new Date(edTimes).setHours(Math.min(endHour,Math.max(new Date(s[j-1].end).getHours(),ed.getHours())),new Date(s[j-1].end).getHours()>ed.getHours()?new Date(s[j-1].end).getMinutes():ed.getHours()>=endHour?endMinute:ed.getMinutes())),
+          start:new Date(new Date(sdTimes).setHours(Math.max(startHour,Math.min(new Date(s[k].start).getHours(),sd.getHours())),new Date(s[k].start).getHours()<sd.getHours()?new Date(s[k].start).getMinutes():sd.getHours()<=startHour?startMinute:sd.getMinutes())),
+          end:new Date(new Date(edTimes).setHours(Math.min(endHour,Math.max(new Date(s[k].end).getHours(),ed.getHours())),new Date(s[k].end).getHours()>ed.getHours()?new Date(s[k].end).getMinutes():ed.getHours()>=endHour?endMinute:ed.getMinutes())),
         })
       break;
       }
     if(j==s.length-1){
       if(match){
         match=false;
-        const k=removeIndex.length>0?j-1:j;
-        removeIndex.push(k);
+        const k=removeIndex[removeIndex.length-1];
+        //removeIndex.push(k);
         newData.push({
           start:new Date(new Date(sdTimes).setHours(Math.max(startHour,Math.min(new Date(s[k].start).getHours(),sd.getHours())),new Date(s[k].start).getHours()>sd.getHours()?new Date(s[k].start).getMinutes():sd.getHours()<=startHour?startMinute:sd.getMinutes())),
           end:new Date(new Date(edTimes).setHours(Math.min(endHour,Math.max(new Date(s[k].end).getHours(),ed.getHours())),new Date(s[k].end).getHours()>ed.getHours()?new Date(s[k].end).getMinutes():ed.getHours()>=endHour?endMinute:ed.getMinutes())),
@@ -254,9 +254,10 @@ function combineArray(s:any[],data,startHour:number=9,startMinute:number=0,endHo
        } 
       }
   }
-  removeIndex.forEach(r=>{
-    newData.splice(r,1);
-  });
+  for(let ri=removeIndex.length-1;ri>=0;ri--){
+    newData.splice(removeIndex[ri],1);
+  }
+  
   return newData;
 }
 </script>
