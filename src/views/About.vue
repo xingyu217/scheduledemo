@@ -7,7 +7,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import FullCalendar from '@fullcalendar/vue';
+import FullCalendar, { diffDates } from '@fullcalendar/vue';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -132,17 +132,20 @@ export default Vue.extend({
       //     end: e.end,
       //     className: 'bg-warning text-white',
       // });
-      const dayDiff=e.end.getDate()-e.start.getDate();
-      let events=this.calendarOptions.events;
+      // const dayDiff=e.end.getDate()-e.start.getDate();
+      // let events=this.calendarOptions.events;
       
-        for(let i=0;i<dayDiff+1;i++){
-        events=combineArray(events,{
-          start:i==0?e.start:new Date(new Date((new Date(e.start.getTime())).setHours(0,0)).setDate(e.start.getDate()+i)),
-          end:i==dayDiff?e.end:new Date(new Date((new Date(e.start.getTime())).setHours(23,59)).setDate(e.start.getDate()+i))
-          });
-      }
+      //   for(let i=0;i<dayDiff+1;i++){
+      //   events=combineArray(events,{
+      //     start:i==0?e.start:new Date(new Date((new Date(e.start.getTime())).setHours(0,0)).setDate(e.start.getDate()+i)),
+      //     end:i==dayDiff?e.end:new Date(new Date((new Date(e.start.getTime())).setHours(23,59)).setDate(e.start.getDate()+i))
+      //     });
+      // }
+      let data=this.calendarOptions.events;
+      data.push({start:e.start,end:e.end});
       
-      this.calendarOptions.events= events.sort(compare);
+      this.calendarOptions.events=combineArray2(data.sort(compare),9,0,18,0);
+      //this.calendarOptions.events= events.sort(compare);
       // this.calendarOptions.events.push({
       //   id:this.eventIndex++,
       //       start: e.start,
@@ -206,6 +209,17 @@ function compare(a,b){
   if(ed>ad){
     return -1;
   }
+  if(ad==ed){
+    const aed=new Date(a.end);
+    const bed=new Date(b.end);
+    if(aed>bed){
+      return 1;
+    }
+    if(bed>aed){
+      return -1
+    }
+    return 0;
+  }
   return 0;
 }
 function combineArray(s:any[],data,startHour:number=9,startMinute:number=0,endHour:number=18,endMinute:number=0){
@@ -259,6 +273,84 @@ function combineArray(s:any[],data,startHour:number=9,startMinute:number=0,endHo
   }
   
   return newData;
+}
+
+function combineArray2(s:any[],startHour:number=9,startMinute:number=0,endHour:number=18,endMinute:number=0){
+  let newData=s.length==1?[...s]:[];
+  for(let i=1;i<s.length;i++){
+    const preStart=new Date(s[i-1].start);
+    const preEnd=new Date(s[i-1].end);
+    const nextStart=new Date(s[i].start);
+    const nextEnd=new Date(s[i].end);
+
+    if(preEnd>=nextStart){
+      if(i==s.length-1){
+        newData.push({start:preStart,end:preEnd>nextEnd?preEnd:nextEnd});
+      }else{
+        for(let j=i+1;j<s.length;j++){
+          const nextStart2=new Date(s[j].start);
+          const nextEnd2=new Date(s[j].end);
+          if(preEnd<nextStart2){
+            newData.push({
+              start:preStart,
+              end:new Date(s[j-1].end)>preEnd?new Date(s[j-1].end):preEnd
+            });
+            
+            if(j==s.length-1&&newData[newData.length-1].end<nextEnd2){
+              newData.push({start:nextStart2,end:nextEnd2});
+            }
+            i=j;
+            break;
+          }else if(j==s.length-1){
+            newData.push({start:preStart,end:preEnd>nextEnd2?preEnd:nextEnd2});
+            i=j;
+          }
+        }
+      }
+      
+    }else{
+      newData.push({start:preStart,end:preEnd});
+      if(i==s.length-1){
+        if(newData[newData.length-1].end<nextEnd){
+         newData.push({start:nextStart,end:nextEnd});
+        }
+      }
+      
+    }
+  }
+  const currentDate=new Date();
+  let splitDate=[];
+  
+  for(let k=0;k<newData.length;k++){
+    const startDay=newData[k].start.getDate();
+    const dayDiff=newData[k].end.getDate()-startDay;
+    for(let p=0;p<=dayDiff;p++){
+      const start=new Date(currentDate.getFullYear(),newData[k].start.getMonth(), startDay+p, p>0?startHour:Math.max(newData[k].start.getHours(),startHour),p>0?startMinute:getMinutes(newData[k].start,startHour,startMinute));
+      const end=new Date(currentDate.getFullYear(),start.getMonth(),startDay+p,p<dayDiff?endHour:Math.min(newData[k].end.getHours(),endHour),p<dayDiff?endMinute:getMinutes(newData[k].end,endHour,endMinute,false));
+      if(!(start.getHours()>endHour||end.getHours()<startHour)){
+          splitDate.push(
+          {
+            start,
+            end
+          }
+        )
+      }
+      
+    }
+    
+  }
+  return splitDate;
+}
+function getMinutes(d1:Date,hour:number,minutes:number,max:boolean=true){
+  const d1Hours=d1.getHours();
+  const d1Minutes=d1.getMinutes();
+    if((max?(d1Hours>hour):(d1Hours<hour))){
+      return d1Minutes;
+    }else if(d1Hours==hour){
+      return max?Math.max(d1Minutes,minutes):Math.min(d1Minutes,minutes);
+    }else{
+      return minutes;
+    }
 }
 </script>
 <style lang="scss">
